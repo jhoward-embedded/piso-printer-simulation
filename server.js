@@ -117,7 +117,6 @@ const upload = multer({
   }
 });
 
-// Admin Basic Auth middleware
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Basic ')) {
@@ -131,7 +130,6 @@ function adminAuth(req, res, next) {
   res.status(403).json({ error: 'Invalid credentials' });
 }
 
-// Public endpoint to verify credentials (for login page)
 app.post('/api/auth', (req, res) => {
   const { username, password } = req.body;
   const creds = getAdminCredentials();
@@ -237,7 +235,7 @@ function getLast7DaysEarnings(jobs) {
   return { labels, data: result };
 }
 
-// ---- API ROUTES ----
+
 app.get('/api/config', (req, res) => res.json(getConfig()));
 
 app.post('/api/config', adminAuth, (req, res) => {
@@ -319,7 +317,6 @@ app.post('/api/create-session', async (req, res) => {
   data.stats.totalSessions = (data.stats.totalSessions || 0) + 1;
   writeData(data);
 
-  // Use BASE_URL environment variable for QR code
   const baseUrl = process.env.BASE_URL || process.env.PUBLIC_URL;
   let uploadUrl;
   if (baseUrl) {
@@ -494,7 +491,7 @@ app.post('/api/print/:filename', adminAuth, (req, res) => {
   } else res.status(404).json({ error: 'Not found' });
 });
 
-// Cleanup expired sessions every minute
+
 setInterval(() => {
   const now = Date.now();
   for (const [token, s] of sessions.entries()) {
@@ -506,12 +503,10 @@ function errorPage(msg) {
   return `<html><body><h2>${msg}</h2></body></html>`;
 }
 
-// Serve admin dashboard at root (or /admin)
 app.get('/', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-// Listen on all interfaces
 app.listen(CONFIG.PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${CONFIG.PORT}`);
 });
