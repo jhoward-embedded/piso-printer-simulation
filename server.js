@@ -59,6 +59,7 @@ function getConfig() {
   } catch (e) {}
   return { ...defaultConfig };
 }
+
 function saveConfig(config) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
 }
@@ -84,6 +85,7 @@ const CONFIG = {
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const PRINT_QUEUE = path.join(__dirname, 'print-queue');
+
 [PUBLIC_DIR, UPLOAD_DIR, PRINT_QUEUE].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
@@ -115,6 +117,7 @@ const upload = multer({
   }
 });
 
+// Admin Basic Auth middleware
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Basic ')) {
@@ -127,6 +130,17 @@ function adminAuth(req, res, next) {
   if (user === creds.username && pass === creds.password) return next();
   res.status(403).json({ error: 'Invalid credentials' });
 }
+
+// Public endpoint to verify credentials (for login page)
+app.post('/api/auth', (req, res) => {
+  const { username, password } = req.body;
+  const creds = getAdminCredentials();
+  if (username === creds.username && password === creds.password) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+});
 
 async function getPageCount(filePath) {
   try {
@@ -156,7 +170,9 @@ function readData() {
       const raw = fs.readFileSync(DATA_FILE);
       return JSON.parse(raw);
     }
-  } catch (e) { console.warn('Data read error, using defaults'); }
+  } catch (e) {
+    console.warn('Data read error, using defaults');
+  }
   return { jobs: [], stats: {} };
 }
 
@@ -221,7 +237,9 @@ function getLast7DaysEarnings(jobs) {
   return { labels, data: result };
 }
 
+// ---- API ROUTES ----
 app.get('/api/config', (req, res) => res.json(getConfig()));
+
 app.post('/api/config', adminAuth, (req, res) => {
   const { logo, background, outerBackground, icon, printerImage } = req.body;
   const cfg = getConfig();
@@ -237,11 +255,9 @@ app.post('/api/config', adminAuth, (req, res) => {
 app.post('/api/admin/change-password', adminAuth, (req, res) => {
   const { currentPassword, newUsername, newPassword } = req.body;
   const creds = getAdminCredentials();
-
   if (currentPassword !== creds.password) {
     return res.status(401).json({ error: 'Current password is incorrect' });
   }
-
   const cfg = getConfig();
   if (newUsername && newUsername.trim().length > 0) {
     cfg.adminUser = newUsername.trim();
@@ -252,15 +268,10 @@ app.post('/api/admin/change-password', adminAuth, (req, res) => {
     return res.status(400).json({ error: 'New password must be at least 4 characters' });
   }
   saveConfig(cfg);
-
-  res.json({
-    success: true,
-    message: 'Credentials updated successfully',
-    username: cfg.adminUser || 'admin'
-  });
+  res.json({ success: true, message: 'Credentials updated successfully', username: cfg.adminUser || 'admin' });
 });
 
-app.get('/api/dashboard', (req, res) => {
+app.get('/api/dashboard', adminAuth, (req, res) => {
   const data = readData();
   const stats = data.stats || {};
   const totalUsers = stats.totalSessions || 0;
@@ -307,8 +318,17 @@ app.post('/api/create-session', async (req, res) => {
   const data = readData();
   data.stats.totalSessions = (data.stats.totalSessions || 0) + 1;
   writeData(data);
-  const ip = getLocalIP();
-  const uploadUrl = `http://${ip}:${CONFIG.PORT}/upload/${token}`;
+
+  // Use BASE_URL environment variable for QR code
+  const baseUrl = process.env.BASE_URL || process.env.PUBLIC_URL;
+  let uploadUrl;
+  if (baseUrl) {
+    const cleanBase = baseUrl.replace(/\/+$/, '');
+    uploadUrl = `${cleanBase}/upload/${token}`;
+  } else {
+    const ip = getLocalIP();
+    uploadUrl = `http://${ip}:${CONFIG.PORT}/upload/${token}`;
+  }
   const qr = await QRCode.toDataURL(uploadUrl, { width: 420, margin: 2 });
   res.json({ token, qr, expiresIn: CONFIG.SESSION_EXPIRY_SEC });
 });
@@ -328,19 +348,16 @@ app.post('/api/upload/:token', upload.single('file'), async (req, res) => {
     return res.status(403).json({ error: 'Invalid session' });
   }
   if (!req.file) return res.status(400).json({ error: 'No file' });
-
   const ext = path.extname(req.file.originalname).toLowerCase();
   const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
   if (!allowed.includes(ext)) {
     fs.unlinkSync(req.file.path);
     return res.status(400).json({ error: 'File type not allowed' });
   }
-
   let pages = 1;
   if (ext === '.pdf') {
     pages = await getPageCount(req.file.path);
   }
-
   const fileInfo = {
     name: req.file.originalname,
     size: req.file.size,
@@ -463,16 +480,21 @@ app.get('/api/queue', adminAuth, (req, res) => {
 
 app.delete('/api/queue/:filename', adminAuth, (req, res) => {
   const file = path.join(PRINT_QUEUE, path.basename(req.params.filename));
-  if (fs.existsSync(file)) { fs.unlinkSync(file); res.json({ success: true }); }
-  else res.status(404).json({ error: 'Not found' });
+  if (fs.existsSync(file)) {
+    fs.unlinkSync(file);
+    res.json({ success: true });
+  } else res.status(404).json({ error: 'Not found' });
 });
 
 app.post('/api/print/:filename', adminAuth, (req, res) => {
   const file = path.join(PRINT_QUEUE, path.basename(req.params.filename));
-  if (fs.existsSync(file)) { tryPrint(file); res.json({ success: true }); }
-  else res.status(404).json({ error: 'Not found' });
+  if (fs.existsSync(file)) {
+    tryPrint(file);
+    res.json({ success: true });
+  } else res.status(404).json({ error: 'Not found' });
 });
 
+// Cleanup expired sessions every minute
 setInterval(() => {
   const now = Date.now();
   for (const [token, s] of sessions.entries()) {
@@ -481,14 +503,15 @@ setInterval(() => {
 }, 60000);
 
 function errorPage(msg) {
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>body{font-family:system-ui;background:#0a1628;color:white;display:flex;height:100vh;align-items:center;justify-content:center;margin:0}h2{text-align:center}</style>
-    </head><body><h2>${msg}</h2></body></html>`;
+  return `<html><body><h2>${msg}</h2></body></html>`;
 }
 
+// Serve admin dashboard at root (or /admin)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+// Listen on all interfaces
 app.listen(CONFIG.PORT, '0.0.0.0', () => {
-  console.log(`LCC Piso Printer running on http://0.0.0.0:${CONFIG.PORT}`);
-  console.log(`Local IP: ${getLocalIP()}`);
-  const creds = getAdminCredentials();
-  console.log(`Admin: ${creds.username} / ${creds.password}`);
+  console.log(`Server running on port ${CONFIG.PORT}`);
 });
