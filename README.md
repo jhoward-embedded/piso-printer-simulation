@@ -1,10 +1,10 @@
-🖨️ LCC PISO PRINT
+ LCC PISO PRINT
 
 Self-Service Printing Kiosk – Powered by QR Codes & Virtual Coins
 
 ---
 
-📖 Overview
+ Overview
 
 LCC PISO PRINT is a complete self‑service printing kiosk system designed for schools, libraries, and coworking spaces.
 It allows users to:
@@ -20,9 +20,9 @@ The system includes a full admin dashboard with analytics, print queue managemen
 
 ---
 
-✨ Key Features
+Key Features
 
-🧑‍💻 User Kiosk (Tablet Interface)
+User Kiosk (Tablet Interface)
 
 · Tap‑to‑start – creates a unique session and generates a QR code.
 · QR code upload – users scan the QR with their phone, upload a file (PDF, JPG, PNG, DOC).
@@ -31,7 +31,7 @@ The system includes a full admin dashboard with analytics, print queue managemen
 · Real‑time progress – animated progress bar during printing.
 · Auto‑cleanup – print jobs are automatically removed from the queue after 1 day.
 
-📊 Admin Dashboard
+ Admin Dashboard
 
 · Overview stats – total savings, today’s earnings, jobs, and pages.
 · Earnings chart – last 7 days earnings (real data from print jobs).
@@ -41,7 +41,7 @@ The system includes a full admin dashboard with analytics, print queue managemen
 · Server logs – live capture of console output (coloured by level: LOG, WARN, ERROR).
 · System summary – total users (sessions), copies, pages, and uptime.
 
-⚙️ Settings
+ Settings
 
 · Branding – change logo, inner/outer backgrounds, center icon, and printer image via URL.
 · Admin account – update username and password (with current password verification).
@@ -49,7 +49,7 @@ The system includes a full admin dashboard with analytics, print queue managemen
 
 ---
 
-🛠️ Technology Stack
+ Technology Stack
 
 Component Technology
 Backend Node.js + Express
@@ -65,7 +65,7 @@ Platform Runs on Termux (Android) or any desktop (Windows/macOS/Linux)
 
 ---
 
-🚀 How It Works
+ How It Works
 
 1. User taps “TAP TO START” on the tablet screen.
 2. A unique session token is generated, and a QR code appears.
@@ -78,7 +78,7 @@ Platform Runs on Termux (Android) or any desktop (Windows/macOS/Linux)
 
 ---
 
-📦 Installation (One‑Tap for Termux)
+ Installation (One‑Tap for Termux)
 
 On a fresh Termux installation, run:
 
@@ -93,13 +93,13 @@ For Visual Studio Code / Desktop, clone the repo and run npm install && npm star
 
 ---
 
-📝 License
+ License
 
 This project is licensed under the MIT License – see the LICENSE file for details.
 
 ---
 
-🙏 Acknowledgements
+ Acknowledgements
 
 Developed for LIPA CITY COLLEGES – College of Engineering and Technology.
 Built with ❤️ by JHoward.
