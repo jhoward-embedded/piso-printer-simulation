@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LCC PISO PRINTER</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a1628;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: background 0.5s ease;
+    }
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      background: #ffffff;
+      border-radius: 32px;
+      padding: 20px 24px 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      text-align: center;
+      flex-direction: column;
+      align-items: center;
+      min-height: 580px;
+      justify-content: flex-start;
+      position: relative;
+      overflow: hidden;
+    }
+    .screen.active { display: flex; }
+    #homeScreen {
+      background: #ffffff;
+      position: relative;
+    }
+    #homeScreen::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: var(--bg-image, url('/bg-pattern.png'));
+      background-size: cover;
+      background-position: center;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+    #homeScreen > * { position: relative; z-index: 1; }
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .logo-placeholder {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      object-fit: contain;
+      background: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+      overflow: hidden;
+    }
+    .logo-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .logo-img i { font-size: 1.2rem; }
+    .school-name {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-align: left;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+    .school-name span {
+      display: block;
+      font-weight: 400;
+      font-size: 0.6rem;
+      color: #94a3b8;
+    }
+    .datetime {
+      text-align: right;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #1e3a8a;
+      line-height: 1.3;
+    }
+    .datetime .time { font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+    .datetime .date { font-weight: 400; color: #64748b; }
+    .main-logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+    .center-icon {
+      font-size: 4rem;
+      color: #2563eb;
+      margin: 16px 0 8px;
+      opacity: 0.8;
+    }
+    .sub {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin: 4px 0 16px;
+      letter-spacing: 1px;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 40px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled {
+      background: #94a3b8;
+      color: #f1f5f9;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1e293b;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      width: 100%;
+    }
+    .btn-secondary:active { transform: scale(0.97); }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-success { background: #22c55e; color: white; }
+    .qr-container {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 16px;
+      margin: 16px 0;
+      width: 100%;
+      max-width: 280px;
+    }
+    .qr-container img { width: 100%; display: block; margin: 0 auto; }
+    .file-info {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      margin: 12px 0;
+    }
+    .file-info .name { font-weight: 600; font-size: 1.1rem; word-break: break-all; color: #1e3a8a; }
+    .file-info .meta { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin: 12px 0;
+    }
+    .settings-grid select, .settings-grid input {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #1e293b;
+      font-size: 1rem;
+      width: 100%;
+    }
+    .settings-grid label { font-size: 0.85rem; color: #64748b; text-align: left; display: block; margin-bottom: 4px; }
+    .payment-status {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2rem;
+    }
+    .payment-status .label { color: #64748b; }
+    .payment-status .value { font-weight: 700; color: #1e3a8a; }
+    .coin-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    .coin-buttons button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+      min-width: 60px;
+    }
+    .coin-buttons button:active { transform: scale(0.95); }
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 40px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .progress-bar .fill { height: 100%; background: #2563eb; width: 0%; transition: width 0.5s; }
+    .status-msg { margin: 12px 0; font-size: 1rem; color: #64748b; }
+    .brand { margin-top: 20px; color: #94a3b8; font-size: 0.8rem; }
+    .total-amount { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin: 8px 0; }
+    .btn-group { display: flex; gap: 12px; width: 100%; }
+    .btn-group .btn-secondary { flex: 1; }
+    .btn-group .btn-primary { flex: 2; }
+    .text-muted { color: #64748b; }
+    #homeScreen { justify-content: center; }
+  </style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div id="homeScreen" class="screen active">
+  <div class="top-bar">
+    <div class="logo-placeholder">
+      <div class="logo-img" id="logoContainer"><i class="fas fa-print"></i></div>
+      <div class="school-name">LIPA CITY COLLEGES<span>COLLEGE OF ENGINEERING AND TECHNOLOGY</span></div>
+    </div>
+    <div class="datetime">
+      <div class="time" id="timeDisplay">--:--:--</div>
+      <div class="date" id="dateDisplay">--- --, ----</div>
+    </div>
+  </div>
+  <div class="main-logo">LCC PISO PRINTER</div>
+  <div class="sub">EASY • FAST • AFFORDABLE</div>
+  <div class="text-muted" style="margin: 4px 0 8px;">Self-Service Printing Station</div>
+  <div class="center-icon" id="centerIcon"><i class="fas fa-print"></i></div>
+  <button class="btn-primary" onclick="startSession()"><i class="fas fa-hand-pointer"></i> TAP TO START</button>
+  <div class="brand">Powered by LCC • Version 1.0</div>
+</div>
+
+<!-- QR SCREEN -->
+<div id="qrScreen" class="screen">
+  <div class="top-bar">
+    <div class="logo-placeholder"><div class="logo-img"><i class="fas fa-print"></i></div><div class="school-name">LIPA CITY COLLEGES<span>COLLEGE OF ENGINEERING AND TECHNOLOGY</span></div></div>
+    <div class="datetime"><div class="time" id="timeDisplay2">--:--:--</div><div class="date" id="dateDisplay2">--- --, ----</div></div>
+  </div>
+  <div class="main-logo" style="font-size:1.4rem;">SCAN QR CODE</div>
+  <div class="sub">Scan the QR code using your phone</div>
+  <div class="qr-container" id="qrContainer"><img id="qrImage" src="" alt="QR"></div>
+  <div class="status-msg" id="qrStatus">Waiting for upload...</div>
+  <button class="btn-secondary" onclick="goHome()" style="margin-top:8px;"><i class="fas fa-arrow-left"></i> Back</button>
+</div>
+
+<!-- FILE SCREEN -->
+<div id="fileScreen" class="screen">
+  <div class="top-bar">
+    <div class="logo-placeholder"><div class="logo-img"><i class="fas fa-print"></i></div><div class="school-name">LIPA CITY COLLEGES<span>COLLEGE OF ENGINEERING AND TECHNOLOGY</span></div></div>
+    <div class="datetime"><div class="time" id="timeDisplay3">--:--:--</div><div class="date" id="dateDisplay3">--- --, ----</div></div>
+  </div>
+  <div class="main-logo" style="font-size:1.4rem;">FILE RECEIVED</div>
+  <div id="fileInfo" class="file-info">
+    <div class="name" id="fileName">Thesis_Final.pdf</div>
+    <div class="meta" id="fileMeta">2.45 MB • <span id="totalPages">15</span> pages</div>
+  </div>
+  <div class="settings-grid">
+    <div><label>Paper Size</label><select id="paperSize" onchange="updateSettings()"><option value="A4">A4</option><option value="Legal">Legal</option></select></div>
+    <div><label>Color Mode</label><select id="colorMode" onchange="updateSettings()"><option value="bw">Black & White</option><option value="color">Color (+₱2)</option></select></div>
+    <div><label>Copies</label><input type="number" id="copies" value="1" min="1" onchange="updateSettings()"></div>
+    <div><label>Total Pages</label><div style="font-size:1.2rem;font-weight:700;padding:6px 0;color:#1e3a8a;" id="totalPagesDisplay">15</div></div>
+  </div>
+  <div class="total-amount" id="totalAmount">TOTAL AMOUNT: ₱15.00</div>
+  <div style="font-size:0.8rem;color:#94a3b8;margin-top:-4px;">₱1 per page • extra for color/legal</div>
+  <div class="btn-group" style="margin-top:12px;">
+    <button class="btn-secondary btn-danger" onclick="goHome()">CANCEL</button>
+    <button class="btn-primary" onclick="proceedToPayment()">PROCEED TO PAYMENT</button>
+  </div>
+</div>
+
+<!-- PAYMENT SCREEN -->
+<div id="paymentScreen" class="screen">
+  <div class="top-bar">
+    <div class="logo-placeholder"><div class="logo-img"><i class="fas fa-print"></i></div><div class="school-name">LIPA CITY COLLEGES<span>COLLEGE OF ENGINEERING AND TECHNOLOGY</span></div></div>
+    <div class="datetime"><div class="time" id="timeDisplay4">--:--:--</div><div class="date" id="dateDisplay4">--- --, ----</div></div>
+  </div>
+  <div class="main-logo" style="font-size:1.4rem;">INSERT COINS</div>
+  <div class="sub">Accepted Coins: ₱1, ₱5, ₱10</div>
+  <div class="payment-status"><span class="label">Total Amount</span><span class="value" id="payTotal">₱15.00</span></div>
+  <div class="payment-status"><span class="label">Amount Inserted</span><span class="value" id="payInserted">₱0.00</span></div>
+  <div class="payment-status"><span class="label">Remaining Balance</span><span class="value" id="payRemaining">₱15.00</span></div>
+  <div class="payment-status"><span class="label">Change</span><span class="value" id="payChange">₱0.00</span></div>
+  <div class="coin-buttons"><button onclick="insertCoin(1)">₱1</button><button onclick="insertCoin(5)">₱5</button><button onclick="insertCoin(10)">₱10</button></div>
+  <div class="status-msg" id="payStatus">Insert exact amount. No change given.</div>
+  <button class="btn-primary" id="startPrintBtn" disabled onclick="startPrinting()">START PRINTING</button>
+  <button class="btn-secondary" onclick="goHome()" style="margin-top:10px;"><i class="fas fa-arrow-left"></i> Cancel</button>
+</div>
+
+<!-- PRINTING SCREEN -->
+<div id="printingScreen" class="screen">
+  <div class="top-bar">
+    <div class="logo-placeholder"><div class="logo-img"><i class="fas fa-print"></i></div><div class="school-name">LIPA CITY COLLEGES<span>COLLEGE OF ENGINEERING AND TECHNOLOGY</span></div></div>
+    <div class="datetime"><div class="time" id="timeDisplay5">--:--:--</div><div class="date" id="dateDisplay5">--- --, ----</div></div>
+  </div>
+  <div class="main-logo" style="font-size:1.4rem;">PRINTING</div>
+  <div class="sub">Printing your file... Please wait a moment.</div>
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+  <div style="font-size:2.5rem;font-weight:700;color:#1e3a8a;" id="progressPercent">0%</div>
+  <div class="status-msg" id="printStatus">Do not remove your file. Please wait until printing is complete.</div>
+  <button class="btn-secondary" onclick="goHome()" id="printDoneBtn" style="display:none;">DONE</button>
+</div>
+
+<script>
+  async function applyConfig() {
+    try {
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      const logoContainer = document.getElementById('logoContainer');
+      if (config.logo) {
+        logoContainer.innerHTML = `<img src="${config.logo}" alt="Logo" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-print\\'></i>';">`;
+      }
+      if (config.background) {
+        document.documentElement.style.setProperty('--bg-image', `url(${config.background})`);
+      }
+      if (config.outerBackground) {
+        const bg = config.outerBackground;
+        if (bg.startsWith('http://') || bg.startsWith('https://')) {
+          document.body.style.backgroundImage = `url(${bg})`;
+          document.body.style.backgroundSize = 'cover';
+          document.body.style.backgroundPosition = 'center';
+          document.body.style.backgroundRepeat = 'no-repeat';
+        } else {
+          document.body.style.background = bg;
+        }
+      }
+      const iconEl = document.getElementById('centerIcon');
+      if (config.icon) iconEl.innerHTML = `<i class="fas ${config.icon}"></i>`;
+    } catch (e) { console.warn('Config not loaded'); }
+  }
+
+  function updateDateTime() {
+    const now = new Date();
+    const optionsTime = { timeZone: 'Asia/Manila', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const optionsDate = { timeZone: 'Asia/Manila', year: 'numeric', month: 'long', day: 'numeric' };
+    const timeStr = now.toLocaleString('en-US', optionsTime);
+    const dateStr = now.toLocaleString('en-US', optionsDate);
+    document.querySelectorAll('.time').forEach(el => el.textContent = timeStr);
+    document.querySelectorAll('.date').forEach(el => el.textContent = dateStr);
+  }
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
+
+  let currentToken = null, pollInterval = null, printProgress = null, currentFilename = null;
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    updateDateTime();
+  }
+  function goHome() {
+    clearInterval(pollInterval); clearInterval(printProgress);
+    currentToken = null; currentFilename = null;
+    showScreen('homeScreen');
+  }
+  async function startSession() {
+    try {
+      const res = await fetch('/api/create-session', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error('Failed');
+      currentToken = data.token;
+      document.getElementById('qrImage').src = data.qr;
+      document.getElementById('qrStatus').textContent = 'Waiting for upload...';
+      showScreen('qrScreen');
+      startPolling();
+    } catch (err) { Swal.fire('Error', err.message, 'error'); }
+  }
+  function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+      if (!currentToken) return;
+      try {
+        const res = await fetch(`/api/session-status/${currentToken}`);
+        if (!res.ok) { clearInterval(pollInterval); return; }
+        const data = await res.json();
+        if (data.isExpired) {
+          clearInterval(pollInterval);
+          Swal.fire('Session expired', 'Please start a new session.', 'warning');
+          goHome(); return;
+        }
+        if (data.used && data.fileInfo) {
+          clearInterval(pollInterval);
+          showFileScreen(data);
+        }
+      } catch (e) {}
+    }, 1500);
+  }
+  function showFileScreen(data) {
+    try {
+      const file = data.fileInfo;
+      if (!file) { document.getElementById('qrStatus').textContent = 'Error: file info missing.'; return; }
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setText('fileName', file.name || 'Unknown file');
+      const size = file.size > 1024*1024 ? (file.size/1024/1024).toFixed(2)+' MB' : (file.size/1024).toFixed(1)+' KB';
+      setText('fileMeta', `${size} • ${file.pages || 1} pages`);
+      setText('totalPagesDisplay', file.pages || 1);
+      setText('totalPages', file.pages || 1);
+      setVal('copies', data.settings.copies || 1);
+      setVal('paperSize', data.settings.paperSize || 'A4');
+      setVal('colorMode', data.settings.color || 'bw');
+      updateSettings();
+      showScreen('fileScreen');
+    } catch (err) { document.getElementById('qrStatus').textContent = 'Error loading file.'; }
+  }
+  async function updateSettings() {
+    if (!currentToken) return;
+    const paperSize = document.getElementById('paperSize').value;
+    const color = document.getElementById('colorMode').value;
+    const copies = parseInt(document.getElementById('copies').value) || 1;
+    try {
+      const res = await fetch(`/api/update-settings/${currentToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paperSize, color, copies })
+      });
+      const data = await res.json();
+      if (data.payment) {
+        const el = document.getElementById('totalAmount');
+        if (el) el.textContent = `TOTAL AMOUNT: ₱${data.payment.total.toFixed(2)}`;
+      }
+    } catch (e) {}
+  }
+  async function proceedToPayment() {
+    try {
+      const res = await fetch(`/api/session-status/${currentToken}`);
+      const data = await res.json();
+      if (!data.payment) return;
+      const total = data.payment.total;
+      document.getElementById('payTotal').textContent = `₱${total.toFixed(2)}`;
+      document.getElementById('payInserted').textContent = '₱0.00';
+      document.getElementById('payRemaining').textContent = `₱${total.toFixed(2)}`;
+      document.getElementById('payChange').textContent = '₱0.00';
+      document.getElementById('startPrintBtn').disabled = true;
+      document.getElementById('payStatus').textContent = 'Insert exact amount. No change given.';
+      showScreen('paymentScreen');
+      startPaymentPolling();
+    } catch (e) { Swal.fire('Error', 'Could not load payment', 'error'); }
+  }
+  function startPaymentPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+      if (!currentToken) return;
+      try {
+        const res = await fetch(`/api/session-status/${currentToken}`);
+        const data = await res.json();
+        if (!data.payment) return;
+        const payment = data.payment;
+        document.getElementById('payInserted').textContent = `₱${payment.inserted.toFixed(2)}`;
+        const remaining = Math.max(0, payment.total - payment.inserted);
+        document.getElementById('payRemaining').textContent = `₱${remaining.toFixed(2)}`;
+        const change = Math.max(0, payment.inserted - payment.total);
+        document.getElementById('payChange').textContent = `₱${change.toFixed(2)}`;
+        if (payment.status === 'paid') {
+          document.getElementById('startPrintBtn').disabled = false;
+          if (change > 0) {
+            document.getElementById('payStatus').textContent = `PAYMENT COMPLETE - Change: ₱${change.toFixed(2)}`;
+          } else {
+            document.getElementById('payStatus').textContent = 'PAYMENT COMPLETE';
+          }
+        } else {
+          document.getElementById('startPrintBtn').disabled = true;
+          document.getElementById('payStatus').textContent = 'Insert exact amount. No change given.';
+        }
+      } catch (e) {}
+    }, 1000);
+  }
+  async function insertCoin(amount) {
+    if (!currentToken) return;
+    try {
+      const res = await fetch(`/api/insert-coin/${currentToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+      if (!res.ok) throw new Error('Failed');
+    } catch (err) { Swal.fire('Error', err.message, 'error'); }
+  }
+  async function startPrinting() {
+    if (!currentToken) return;
+    // Fetch final payment info for SweetAlert
+    let paymentInfo = null;
+    try {
+      const res = await fetch(`/api/session-status/${currentToken}`);
+      const data = await res.json();
+      if (data.payment) paymentInfo = data.payment;
+    } catch (e) {}
+
+    // Show confirmation with change details
+    const total = paymentInfo?.total || 0;
+    const inserted = paymentInfo?.inserted || 0;
+    const change = Math.max(0, inserted - total);
+    let message = '';
+    if (change > 0) {
+      message = `Change to be returned: ₱${change.toFixed(2)}`;
+    } else {
+      message = 'Exact payment received. No change.';
+    }
+
+    const confirmResult = await Swal.fire({
+      title: 'Proceed to print?',
+      html: `
+        <div style="text-align:left; margin: 0 auto; max-width: 300px;">
+          <p><strong>Total:</strong> ₱${total.toFixed(2)}</p>
+          <p><strong>Amount Inserted:</strong> ₱${inserted.toFixed(2)}</p>
+          <p><strong>Change:</strong> ₱${change.toFixed(2)}</p>
+          <p style="margin-top: 8px; font-size: 0.9rem; color: #64748b;">${message}</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb',
+      cancelButtonColor: '#dc2626',
+      confirmButtonText: 'Start Printing',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/start-print/${currentToken}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      currentFilename = data.filename;
+      showScreen('printingScreen');
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('progressPercent').textContent = '0%';
+      document.getElementById('printStatus').textContent = 'Printing started...';
+      document.getElementById('printDoneBtn').style.display = 'none';
+      let progress = 0;
+      clearInterval(printProgress);
+      printProgress = setInterval(async () => {
+        progress += Math.random() * 10;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(printProgress);
+          if (currentFilename) {
+            try { await fetch(`/api/delete-print/${encodeURIComponent(currentFilename)}`, { method: 'POST' }); } catch(e) {}
+          }
+          document.getElementById('printStatus').textContent = 'Printing complete!';
+          document.getElementById('printDoneBtn').style.display = 'block';
+        }
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+      }, 400);
+    } catch (err) { Swal.fire('Error', err.message, 'error'); }
+  }
+
+  applyConfig();
+  showScreen('homeScreen');
+</script>
+</body>
+</html>

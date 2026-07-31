@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload - LCC</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .card{background:white;border-radius:32px;padding:32px 24px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.1);}
+    .logo{font-size:1.5rem;font-weight:700;color:#1e3a8a;margin-bottom:4px;}
+    h2{margin-bottom:8px;color:#1e293b;}
+    p{color:#64748b;margin-bottom:24px;}
+    input[type="file"]{display:none;}
+    .upload-btn{background:#2563eb;color:white;border:none;padding:16px;width:100%;border-radius:40px;font-size:1.2rem;font-weight:700;cursor:pointer;transition:0.15s;box-shadow:0 4px 12px rgba(37,99,235,0.3);}
+    .upload-btn:disabled{background:#94a3b8;color:#f1f5f9;cursor:not-allowed;box-shadow:none;}
+    #file-name{margin-top:12px;color:#64748b;font-size:0.95rem;}
+    #status{margin-top:12px;font-weight:500;}
+    .success{color:#22c55e;}
+    .error{color:#dc2626;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">LCC PISO PRINTER</div>
+  <h2><i class="fas fa-upload"></i> Upload Your File</h2>
+  <p>PDF, JPG, PNG, DOC (max 15MB)</p>
+  <button class="upload-btn" id="chooseBtn" onclick="document.getElementById('fileInput').click()"><i class="fas fa-folder-open"></i> Choose File</button>
+  <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+  <div id="file-name"></div>
+  <div id="status"></div>
+</div>
+<script>
+  const pathParts = location.pathname.split('/');
+  const token = pathParts[pathParts.length - 1];
+  const uploadUrl = location.origin + '/api/upload/' + token;
+  const fileInput = document.getElementById('fileInput');
+  const chooseBtn = document.getElementById('chooseBtn');
+  const fileNameDisplay = document.getElementById('file-name');
+  const statusDisplay = document.getElementById('status');
+
+  fileInput.addEventListener('change', async () => {
+    if (!fileInput.files.length) return;
+    const file = fileInput.files[0];
+    fileNameDisplay.textContent = file.name;
+    chooseBtn.disabled = true;
+    chooseBtn.textContent = 'Uploading...';
+    statusDisplay.className = '';
+    statusDisplay.textContent = '';
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(uploadUrl, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      statusDisplay.className = 'success';
+      statusDisplay.textContent = 'Upload successful!';
+      chooseBtn.textContent = 'Done';
+      chooseBtn.disabled = true;
+      setTimeout(() => { window.close(); }, 2000);
+    } catch (err) {
+      statusDisplay.className = 'error';
+      statusDisplay.textContent = err.message;
+      chooseBtn.textContent = 'Try Again';
+      chooseBtn.disabled = false;
+      fileNameDisplay.textContent = '';
+    }
+  });
+</script>
+</body>
+</html>

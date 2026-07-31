@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .login-box{background:white;border-radius:32px;padding:40px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.1);text-align:center;}
+    .login-box .icon{font-size:3rem;color:#2563eb;margin-bottom:8px;}
+    .login-box h2{color:#1e3a8a;margin-bottom:4px;}
+    .login-box p{color:#64748b;font-size:0.9rem;margin-bottom:24px;}
+    .login-box input{width:100%;padding:12px 16px;border:1px solid #cbd5e1;border-radius:12px;font-size:1rem;margin-bottom:12px;outline:none;transition:0.15s;}
+    .login-box input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.2);}
+    .login-box button{background:#2563eb;color:white;border:none;padding:14px;border-radius:40px;font-size:1.1rem;font-weight:700;cursor:pointer;width:100%;transition:0.15s;box-shadow:0 4px 12px rgba(37,99,235,0.3);}
+    .login-box button:hover{background:#1d4ed8;}
+    .login-box button:disabled{background:#94a3b8;cursor:not-allowed;box-shadow:none;}
+    .error-msg{color:#dc2626;font-size:0.9rem;margin-top:8px;min-height:20px;}
+  </style>
+</head>
+<body>
+<div class="login-box">
+  <div class="icon"><i class="fas fa-lock"></i></div>
+  <h2>Admin Login</h2>
+  <p>Enter your credentials to access the dashboard</p>
+  <input type="text" id="username" placeholder="Username" value="admin">
+  <input type="password" id="password" placeholder="Password">
+  <button id="loginBtn" onclick="login()"><i class="fas fa-sign-in-alt"></i> Login</button>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+<script>
+  async function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const btn = document.getElementById('loginBtn');
+    const error = document.getElementById('errorMsg');
+    error.textContent = '';
+    if (!username || !password) { error.textContent = 'Please enter both fields.'; return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    const auth = btoa(username + ':' + password);
+    try {
+      const res = await fetch('/api/queue', { headers: { 'Authorization': 'Basic ' + auth } });
+      if (res.ok) {
+        localStorage.setItem('adminAuth', auth);
+        window.location.href = '/admin.html';
+      } else {
+        error.textContent = 'Invalid username or password.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+      }
+    } catch (e) {
+      error.textContent = 'Network error. Please try again.';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+    }
+  }
+  document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>
