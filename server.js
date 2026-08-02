@@ -8,6 +8,7 @@ const os = require('os');
 const cors = require('cors');
 const { exec } = require('child_process');
 const { PDFDocument } = require('pdf-lib');
+const bcryptjs = require('bcryptjs');
 
 const MAX_LOGS = 1000;
 const logs = [];
@@ -126,8 +127,11 @@ function adminAuth(req, res, next) {
   const base64 = auth.split(' ')[1];
   const [user, pass] = Buffer.from(base64, 'base64').toString().split(':');
   const creds = getAdminCredentials();
-  if (user === creds.username && pass === creds.password) return next();
-  res.status(403).json({ error: 'Invalid credentials' });
+  if (user === creds.username && bcryptjs.compareSync(pass, creds.password)) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Invalid credentials' });
+  }
 }
 
 app.post('/api/auth', (req, res) => {
@@ -253,20 +257,22 @@ app.post('/api/config', adminAuth, (req, res) => {
 app.post('/api/admin/change-password', adminAuth, (req, res) => {
   const { currentPassword, newUsername, newPassword } = req.body;
   const creds = getAdminCredentials();
-  if (currentPassword !== creds.password) {
+
+  if (!bcryptjs.compareSync(currentPassword, creds.password)) {
     return res.status(401).json({ error: 'Current password is incorrect' });
   }
+
   const cfg = getConfig();
   if (newUsername && newUsername.trim().length > 0) {
     cfg.adminUser = newUsername.trim();
   }
   if (newPassword && newPassword.trim().length >= 4) {
-    cfg.adminPassword = newPassword.trim();
-  } else if (newPassword !== undefined && newPassword.trim().length > 0 && newPassword.trim().length < 4) {
+    cfg.adminPassword = bcryptjs.hashSync(newPassword.trim(), 10);
+  } else if (newPassword !== undefined && newPassword.trim().length < 4) {
     return res.status(400).json({ error: 'New password must be at least 4 characters' });
   }
   saveConfig(cfg);
-  res.json({ success: true, message: 'Credentials updated successfully', username: cfg.adminUser || 'admin' });
+  res.json({ success: true, message: 'Credentials updated' });
 });
 
 app.get('/api/dashboard', adminAuth, (req, res) => {
