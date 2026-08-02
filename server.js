@@ -48,7 +48,7 @@ const defaultConfig = {
   icon: 'fa-print',
   printerImage: 'https://pngimg.com/uploads/printer/printer_PNG101566.png',
   adminUser: 'admin',
-  adminPassword: 'admin'
+  adminPassword: '$2b$10$1j6hC0bifW61S1iUofsIY.Hg2enwuaGvAvn5zADWP/vLrzzTKe/62'
 };
 
 function getConfig() {
